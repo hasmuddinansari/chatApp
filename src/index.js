@@ -19,23 +19,66 @@ app.use(express.static(publicDirPath));
 
 const { generateMessage } = require("./utills/messages");
 
+//add users and removeusers methods
+
+const {
+  addUser,
+  getUsersInRoom,
+  removeUser,
+  getUser,
+} = require("./utills/users");
+
 io.on("connection", (socket) => {
   console.log("socket.io is connected with server");
-  socket.on("join", ({ username, room }) => {
-    socket.join(room);
-    socket.emit("message", generateMessage("welcome"));
+  socket.on("join", ({ username, room }, callback) => {
+    let { error, user } = addUser({ id: socket.id, username, room });
+    // if there is any error dont proceed
+    if (error) {
+      return callback(error);
+    }
+    // else let user allow to join
+    socket.join(user.room);
+
+    socket.emit(
+      "message",
+      generateMessage(`welcome ${user.username}`, "Admin")
+    );
+
     socket.broadcast
-      .to(room)
-      .emit("message", generateMessage(`${username} has joined`));
+      .to(user.room)
+      .emit(
+        "message",
+        generateMessage(`${user.username} has joined`),
+        user.username
+      );
+
+    //accesss all rooms users
+    io.to(user.room).emit("dataRoom", {
+      room: user.room,
+      users: getUsersInRoom(user.room),
+    });
+
+    callback();
   });
 
   socket.on("sendMessage", (message, callback) => {
-    io.emit("message", generateMessage(message));
+    let user = getUser(socket.id);
+    io.to(user.room).emit("message", generateMessage(message, user.username));
     callback();
   });
 
   socket.on("disconnect", () => {
-    io.emit("message", generateMessage("A user has disconnected !"));
+    let user = removeUser(socket.id);
+    if (user) {
+      io.to(user.room).emit(
+        "message",
+        generateMessage(`${user.username} left!`)
+      );
+      io.to(user.room).emit("dataRoom", {
+        room: user.room,
+        users: getUsersInRoom(user.room),
+      });
+    }
   });
 });
 

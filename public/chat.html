@@ -10,7 +10,9 @@
 
   <body>
     <div class="chat">
-      <div class="chat__sidebar"></div>
+      <div class="chat__sidebar" id="sidebar">
+        <!-- active users in current room -->
+      </div>
 
       <div class="chat__main">
         <!-- allmessage -->
@@ -36,6 +38,18 @@
           </p>
           <p>{{messages}}</p>
       </div>
+    </script>
+
+    <!-- sidebar template -->
+    <script type="text/html" id="side_bar_template">
+      <h2 class="room-title">{{room}}</h2>
+      <h4 class="list-title">Users</h4>
+      <ul class="users">
+        {{#users}}
+          <li>{{username}}</li>
+        {{/users}}
+
+      </ul>
     </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mustache.js/3.0.1/mustache.min.js"></script>
